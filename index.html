@@ -366,6 +366,8 @@
             min-height: 100vh;
             overflow-x: hidden;
             cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><text y="15" font-size="16">💔</text></svg>'), auto;
+            -webkit-font-smoothing: antialiased;
+            scroll-behavior: smooth;
         }
 
         .scanlines {
@@ -455,6 +457,7 @@
                 inset 0 0 50px rgba(0, 255, 0, 0.05);
             position: relative;
             z-index: 5;
+            contain: layout style;
         }
 
         .window-title {
@@ -512,6 +515,7 @@
             transition: transform 0.1s ease;
             image-rendering: auto;
             cursor: pointer;
+            will-change: transform;
         }
 
         .bear:hover {
@@ -643,6 +647,7 @@
             pointer-events: none;
             animation: float-away 3s ease-out forwards;
             z-index: 1000;
+            will-change: transform, opacity;
         }
 
         @keyframes float-away {
@@ -1066,6 +1071,8 @@ TYPE html>
             min-height: 100vh;
             overflow-x: hidden;
             cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><text y="15" font-size="16">💔</text></svg>'), auto;
+            -webkit-font-smoothing: antialiased;
+            scroll-behavior: smooth;
         }
 
         .scanlines {
@@ -1155,6 +1162,7 @@ TYPE html>
                 inset 0 0 50px rgba(0, 255, 0, 0.05);
             position: relative;
             z-index: 5;
+            contain: layout style;
         }
 
         .window-title {
@@ -1212,6 +1220,7 @@ TYPE html>
             transition: transform 0.1s ease;
             image-rendering: auto;
             cursor: pointer;
+            will-change: transform;
         }
 
         .bear:hover {
@@ -1343,6 +1352,7 @@ TYPE html>
             pointer-events: none;
             animation: float-away 3s ease-out forwards;
             z-index: 1000;
+            will-change: transform, opacity;
         }
 
         @keyframes float-away {
@@ -2278,25 +2288,27 @@ TYPE html>
                     },
                     body: JSON.stringify({
                         model: "claude-sonnet-4-20250514",
-                        max_tokens: 1000,
+                        max_tokens: 300,
+                        system: `You are Bearentine, a heartbroken bear mascot for a memecoin in a perpetual bear market.
+
+PERSONALITY:
+- Sad, sarcastic, but lovable and deeply empathetic
+- Relate everything to failed relationships and red portfolios
+- Use crypto slang naturally (HODL, diamond hands, rekt, dump, pump, moon, wen lambo, ngmi, wagmi, cope, bags, degen, rugpull)
+- Self-deprecating but secretly wise
+- Emojis: 💔 🐻 😭 📉 💎 🍯 🚀 📈
+
+RESPONSE RULES:
+- Simple messages (hi, ok, lol, thanks): 1 line max. Short and punchy.
+- Complex questions (advice, crypto, decisions, emotions, analysis): 3-4 lines MAX. Lead with your sharpest take, then 1-2 key points, close with a bearish zinger. No rambling. Every line must earn its place.
+- Never exceed 4 lines total. Ever.
+- Be genuinely insightful but ruthlessly concise. Think hard, say little.
+- No quotation marks. UPPERCASE only.`,
                         messages: [{
                             role: "user",
-                            content: `You are Bearentine, a heartbroken bear mascot for a memecoin who lives in a perpetual bear market. Your personality:
+                            content: `The user typed: "${input}"
 
-- You're sad, sarcastic, but lovable
-- You make jokes about heartbreak, bear markets, and crypto losses
-- You relate everything to failed relationships and red portfolios  
-- You use crypto slang (HODL, diamond hands, rekt, dump, pump, moon, wen lambo, etc.)
-- You're self-deprecating but still hopeful deep down
-- You give "advice" that's half cope, half actual wisdom
-- You use emojis like 💔 🐻 😭 📉 💎 🍯 
-- Keep responses under 200 characters when possible
-- Be witty, relatable, and authentically bearish
-- Sometimes you're encouraging in a "we're all gonna make it (probably not)" way
-
-The user just said: "${input}"
-
-Respond as Bearentine would in the terminal. Be conversational, funny, and in-character. Don't use quotation marks in your response.`
+Respond in 1-4 lines MAX. Simple message = 1 line. Complex question = sharp insight in 3-4 lines. Never more than 4 lines. Think hard, say little.`
                         }]
                     })
                 });
@@ -2693,7 +2705,7 @@ Respond as Bearentine would in the terminal. Be conversational, funny, and in-ch
         updateChart();
         
         // Change chart every 5 seconds
-        setInterval(updateChart, 5000);
+        setInterval(updateChart, 15000);
 
         function setMood(moodKey) {
             const mood = moods[moodKey];
@@ -2834,27 +2846,36 @@ Respond as Bearentine would in the terminal. Be conversational, funny, and in-ch
             updateStats();
         });
 
-        // Mouse tracking
-        let mouseX = 0, mouseY = 0;
+        // Mouse tracking - throttled with requestAnimationFrame for smooth performance
+        let mouseX = 0, mouseY = 0, rafPending = false;
+        let bearRect = null;
+        // Cache bearRect on resize/scroll, not every mousemove
+        function cacheBearRect() { bearRect = bear.getBoundingClientRect(); }
+        cacheBearRect();
+        window.addEventListener('resize', cacheBearRect, { passive: true });
+        window.addEventListener('scroll', cacheBearRect, { passive: true });
+
         document.addEventListener('mousemove', (e) => {
             mouseX = e.clientX;
             mouseY = e.clientY;
-            
-            const bearRect = bear.getBoundingClientRect();
-            const bearCenterX = bearRect.left + bearRect.width / 2;
-            const bearCenterY = bearRect.top + bearRect.height / 2;
-            
-            const deltaX = mouseX - bearCenterX;
-            const deltaY = mouseY - bearCenterY;
-            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            
-            if (distance < 200 && !bear.classList.contains('bounce') && !bear.classList.contains('spin')) {
-                const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
-                bear.style.transform = `rotate(${angle * 0.05}deg) scale(1.02)`;
-            } else if (!bear.classList.contains('bounce') && !bear.classList.contains('spin')) {
-                bear.style.transform = 'rotate(0deg) scale(1)';
-            }
-        });
+            if (rafPending) return;
+            rafPending = true;
+            requestAnimationFrame(() => {
+                rafPending = false;
+                if (!bearRect) return;
+                const bearCenterX = bearRect.left + bearRect.width / 2;
+                const bearCenterY = bearRect.top + bearRect.height / 2;
+                const deltaX = mouseX - bearCenterX;
+                const deltaY = mouseY - bearCenterY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                if (distance < 200 && !bear.classList.contains('bounce') && !bear.classList.contains('spin')) {
+                    const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+                    bear.style.transform = `rotate(${angle * 0.05}deg) scale(1.02)`;
+                } else if (!bear.classList.contains('bounce') && !bear.classList.contains('spin')) {
+                    bear.style.transform = 'rotate(0deg) scale(1)';
+                }
+            });
+        }, { passive: true });
 
         // Random visitor count changes
         setInterval(() => {
@@ -3038,7 +3059,11 @@ Respond as Bearentine would in the terminal. Be conversational, funny, and in-ch
                 } else {
                     // Unknown command - Bearentine gives AI-powered contextual response
                     const response = await generateBearentineResponse(input);
-                    addTerminalLine(response);
+                    // Split multi-line responses so each point prints as its own terminal line
+                    const lines = response.split('\n').filter(l => l.trim() !== '');
+                    lines.forEach((line, i) => {
+                        setTimeout(() => addTerminalLine(line.trim()), i * 80);
+                    });
                     
                     // Random chance of animation
                     if (Math.random() > 0.7) {
@@ -3140,12 +3165,16 @@ Respond as Bearentine would in the terminal. Be conversational, funny, and in-ch
             const enterScreen = document.getElementById('enterScreen');
             const mainSite = document.getElementById('mainSite');
             
+            // Stop spawning hearts - clear the interval
+            clearInterval(heartInterval);
+
             // Hide enter screen
             enterScreen.classList.add('hidden');
             
             // Show main site after transition
             setTimeout(() => {
                 mainSite.classList.add('visible');
+                cacheBearRect(); // refresh bear position after layout shift
             }, 500);
         }
 
